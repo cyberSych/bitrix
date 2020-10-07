@@ -1,26 +1,28 @@
 <?php
-
 require_once($_SERVER["DOCUMENT_ROOT"] . "/bitrix/modules/main/include/prolog_before.php");
 
 CModule::IncludeModule('iblock');
 
 
-
-
 /* возвращает таблицу csv в виде массива
    принимает в качестве параметра путь к файлу */
 function get_csv_table($filePath) {
-    $csvTable = [];
 
     $handleFile = fopen($filePath, "r");
 
     $csvTable["properties"] = fgetcsv($handleFile, 0, ";");
 
+    /* _________________КОСТЫЛЬ НЕ ТРОГАТЬ_________________ */
+    $brokenKey = array_key_last($csvTable["properties"]);
+    if ($csvTable["properties"][$brokenKey] == false) {
+        unset($csvTable["properties"][$brokenKey]);
+    }
+    /* _________________КОСТЫЛЬ НЕ ТРОГАТЬ_________________ */
+
     $line = 1;
     while (($csvHandleFileLine = fgetcsv($handleFile, 0, ";")) !== false) {
         foreach ($csvTable["properties"] as $i => $prop) {
             $csvTable[$line][$prop] = $csvHandleFileLine[$i];
-            settype($csvTable[$line][$prop], "string");
         }
         $line++;
     }
@@ -32,14 +34,21 @@ function get_csv_table($filePath) {
 /* возвращает таблицу инфоблока в виде массива
    принимает в качестве параметра ID информационного блока Bitrix */
 function get_iblock_table($ID) {
-    $ibTable = [];
-    $ibProperty = [];
+
+    $ibTable["properties"] = [];
     $ibPropList = CIBlockProperty::GetList(array(), array("IBLOCK_ID" => $ID));
 
-    while ($ibProperty[] = $ibPropList->Fetch()['NAME']);
+    while ($ibTable["properties"][] = $ibPropList->Fetch()['NAME']);
+
+    /* _________________КОСТЫЛЬ НЕ ТРОГАТЬ_________________ */
+    $brokenKey = array_key_last($ibTable["properties"]);
+    if ($ibTable["properties"][$brokenKey] == false) {
+        unset($ibTable["properties"][$brokenKey]);
+    }
+    /* _________________КОСТЫЛЬ НЕ ТРОГАТЬ_________________ */
 
     $arSelectFields = ["ID"];
-    foreach ($ibProperty as $prop) {
+    foreach ($ibTable["properties"] as $prop) {
         $arSelectFields[] = "PROPERTY_" . strtoupper($prop);
     }
 
@@ -51,9 +60,8 @@ function get_iblock_table($ID) {
       $arSelectFields
     );
 
-    $ibTable["properties"] = $ibProperty;
     for ($line = 1; $elem = $ibElem->Fetch(); $line++) {
-        foreach ($ibProperty as $prop) {
+        foreach ($ibTable["properties"] as $prop) {
             $ibTable[$line][$prop] = $elem["PROPERTY_" . strtoupper($prop) . "_VALUE"];
         }
     }
@@ -88,9 +96,8 @@ function update_iblock_from_csv($ID, $filePath) {
             $ibProp->Add(array("IBLOCK_ID" => $ID, "NAME" => $prop, "CODE" => $prop));
         }
     }
-    while ($propID) {
+    while ($propID = $ibPropList->Fetch()['ID']) {
         $ibProp->Delete($propID);
-        $propID = $ibPropList->Fetch()['ID'];
     }
 
     /* обновление значений элементов */
@@ -105,13 +112,10 @@ function update_iblock_from_csv($ID, $filePath) {
 
     $arFields = [];
     for ($i = 1; $csvTable[$i] !== null; $i++) {
-
-        $elemID = $ibElemList->Fetch()['ID'];
-
         foreach ($csvTable[$i] as $prop => $field) {
             $arFields[$prop] = $field;
         }
-        if ($elemID) {
+        if ($elemID = $ibElemList->Fetch()['ID']) {
             $ibElem->Update($elemID, array("PROPERTY_VALUES" => $arFields));
         } else {
             $ibElem->Add(array("IBLOCK_ID" => $ID, "NAME" => "element", "PROPERTY_VALUES" => $arFields));
