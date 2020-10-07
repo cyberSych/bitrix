@@ -1,4 +1,5 @@
 <?php
+
 require_once($_SERVER["DOCUMENT_ROOT"] . "/bitrix/modules/main/include/prolog_before.php");
 
 CModule::IncludeModule('iblock');
@@ -16,7 +17,7 @@ function get_csv_table($filePath) {
     $csvTable["properties"] = fgetcsv($handleFile, 0, ";");
 
     $line = 1;
-    while (($csvHandleFileLine = fgetcsv($handleFile, 0, ";")) != false) {
+    while (($csvHandleFileLine = fgetcsv($handleFile, 0, ";")) !== false) {
         foreach ($csvTable["properties"] as $i => $prop) {
             $csvTable[$line][$prop] = $csvHandleFileLine[$i];
             settype($csvTable[$line][$prop], "string");
@@ -26,6 +27,7 @@ function get_csv_table($filePath) {
 
     return $csvTable;
 }
+
 
 /* возвращает таблицу инфоблока в виде массива
    принимает в качестве параметра ID информационного блока Bitrix */
@@ -50,16 +52,16 @@ function get_iblock_table($ID) {
     );
 
     $ibTable["properties"] = $ibProperty;
-    for ($i = 1; $elem = $ibElem->Fetch(); $i++) {
-        $ibTable[$i] = [];
+    for ($line = 1; $elem = $ibElem->Fetch(); $line++) {
         foreach ($ibProperty as $prop) {
-            $ibTable[$i][$prop] = $elem["PROPERTY_" . strtoupper($prop) . "_VALUE"];
+            $ibTable[$line][$prop] = $elem["PROPERTY_" . strtoupper($prop) . "_VALUE"];
         }
     }
+
     return $ibTable;
 }
 
-/* возвращает false, если обновление не требуется
+/* возвращает false, если обновление не произошло
    возвращает true, если потребовалось обновление таблицы
    в качестве параметра $ID принимает ID инфоблока
    в качестве параметра $filePath принимает адрес csv файда в виде строки */
@@ -75,7 +77,6 @@ function update_iblock_from_csv($ID, $filePath) {
     if ($csvTable == $ibTable) {
         return false;
     }
-
     /* обновление значений свойств */
     $ibProp = new CIBlockProperty;
     $ibPropList = CIBlockProperty::GetList(array(), array("IBLOCK_ID" => $ID));
