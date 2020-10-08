@@ -107,7 +107,7 @@ function update_iblock_from_csv($ID, $filePath) {
       array("IBLOCK_ID" => $ID),
       false,
       false,
-      array("ID")
+      array("ID", "IBLOCK_ID")
     );
 
     $arFields = [];
