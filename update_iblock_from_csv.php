@@ -47,7 +47,7 @@ function get_iblock_table($ID) {
     }
     /* _________________КОСТЫЛЬ НЕ ТРОГАТЬ_________________ */
 
-    $arSelectFields = ["ID"];
+    $arSelectFields = ["ID", "IBLOCK_ID"];
     foreach ($ibTable["properties"] as $prop) {
         $arSelectFields[] = "PROPERTY_" . strtoupper($prop);
     }
