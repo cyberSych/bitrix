@@ -156,8 +156,3 @@ function update_iblock_from_csv($ID, $filePath) {
 
     return true;
 }
-
-
-$ID = 9;
-$filePath = "test.csv";
-echo update_iblock_from_csv($ID, $filePath);
