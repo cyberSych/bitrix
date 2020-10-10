@@ -93,10 +93,9 @@ function update_iblock_from_csv($ID, $filePath) {
 
         $elemDiff = array_diff_assoc($elem, $ibTable[$primKey]);
         if ( ! empty($elemDiff) ) {
-            $toUpdate[$primKey] = $elemDiff;
+            array_push($toUpdate, $primKey);
         }
     }
-    $toUpdate = array_keys($toUpdate);
 
     /* проверяем есть ли необходимость в изменениях */
     $updates = array_merge($propToAdd, $toAdd, $toDelete, $toUpdate);
