@@ -46,7 +46,7 @@ function get_iblock_table($ID) {
 
     $arSelectFields = ["ID", "IBLOCK_ID"];
     foreach ($ibTable["properties"] as $prop) {
-        $arSelectFields[] = "PROPERTY_" . strtoupper($prop);
+        array_push($arSelectFields, "PROPERTY_" . strtoupper($prop));
     }
 
     $ibElem = CIBlockElement::GetList(
@@ -81,6 +81,7 @@ function update_iblock_from_csv($ID, $filePath) {
 
     /* получаем новые свойства */
     $propToAdd = array_diff($csvTable["properties"], $ibTable["properties"]);
+    $propToDelete = array_diff($ibTable["properties"], $csvTable["properties"]);
     /* сортируем эелементы по действиям с ними */
     $toAdd = array_keys(array_diff_assoc($csvTable, $ibTable));
     $toDelete = array_keys(array_diff_assoc($ibTable, $csvTable));
@@ -98,23 +99,26 @@ function update_iblock_from_csv($ID, $filePath) {
     }
 
     /* проверяем есть ли необходимость в изменениях */
-    $updates = array_merge($propToAdd, $toAdd, $toDelete, $toUpdate);
+    $updates = array_merge($propToAdd, $propToDelete, $toAdd, $toDelete, $toUpdate);
     if (empty($updates)) {
         return false;
     }
 
-    /* неактуальные свойства из инфоблока не удаляются, только добавляются новые */
-    if (!empty($propToAdd)) {
-        $ibProp = new CIBlockProperty;
+    /* неактуальные свойства из инфоблока удаляются, добавляются новые */
+    $ibProp = new CIBlockProperty;
+    $ibPropList = CIBlockProperty::GetList(array(), array("IBLOCK_ID" => $ID));
 
-        foreach ($propToAdd as $prop) {
-            $ibProp->Add(array("IBLOCK_ID" => $ID, "NAME" => $prop, "CODE" => $prop));
+    foreach ($propToAdd as $prop) {
+        $ibProp->Add(array("IBLOCK_ID" => $ID, "NAME" => $prop, "CODE" => $prop));
+    }
+    while ($prop = $ibPropList->Fetch()) {
+        if (in_array($prop['NAME'], $propToDelete)) {
+            $ibProp->Delete($prop['ID']);
         }
     }
 
-  /** обновление и удаление с привязкой к свойству,
-    * которое определенно в константе TABLE_PRIMARY_KEY
-    */
+    /* обновление и удаление с привязкой к свойству,
+       которое определенно в константе TABLE_PRIMARY_KEY */
     $ibElem = new CIBlockElement;
     // проверка необходимости удалять и обновлять элементы
     if (!empty(array_merge($toUpdate, $toDelete))) {
